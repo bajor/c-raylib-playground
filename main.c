@@ -128,9 +128,9 @@ int main(void) {
         // --- Red dot AI movement ---
         for (int i = 0; i < MAX_DOTS; i++) {
             if (!dots[i].alive) continue;
-            float best_dist = -1;
+            float best_score = -1e9f;
             Vector2 best_move = {0, 0};
-            // Try 8 directions (N, NE, E, SE, S, SW, W, NW, and stay)
+            // Try 8 directions (N, NE, E, SE, S, SW, W, NW)
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     if (dx == 0 && dy == 0) continue;
@@ -148,10 +148,17 @@ int main(void) {
                         }
                     }
                     if (blocked) continue;
-                    // Prefer moves that maximize distance from player
-                    float dist = sqrtf((test.x-player.x)*(test.x-player.x) + (test.y-player.y)*(test.y-player.y));
-                    if (dist > best_dist) {
-                        best_dist = dist;
+                    // Score: maximize distance from player, minimize proximity to other dots
+                    float dist_player = sqrtf((test.x-player.x)*(test.x-player.x) + (test.y-player.y)*(test.y-player.y));
+                    float min_dist_dot = 1e9f;
+                    for (int j = 0; j < MAX_DOTS; j++) {
+                        if (i == j || !dots[j].alive) continue;
+                        float d = sqrtf((test.x-dots[j].rect.x)*(test.x-dots[j].rect.x) + (test.y-dots[j].rect.y)*(test.y-dots[j].rect.y));
+                        if (d < min_dist_dot) min_dist_dot = d;
+                    }
+                    float score = dist_player + 0.7f * min_dist_dot; // weight for spreading
+                    if (score > best_score) {
+                        best_score = score;
                         best_move = (Vector2){dx * PLAYER_SPEED, dy * PLAYER_SPEED};
                     }
                 }
