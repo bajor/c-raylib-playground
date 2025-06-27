@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define SCREEN_W 5000
-#define SCREEN_H 2650
+#define SCREEN_W 1200
+#define SCREEN_H 800
 
 #define TILE_SIZE 25
 #define LEVEL_W 100

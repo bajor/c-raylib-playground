@@ -48,11 +48,10 @@ int main(void) {
 
   // Camera setup
   Camera2D camera = {0};
-  // Scale down the board: fit about 1/10 of the board width in the window
-  float zoom_factor = (float)SCREEN_W / (LEVEL_W * TILE_SIZE) * 10.0f;
-  if (zoom_factor > 1.0f)
-    zoom_factor = 1.0f;
-  camera.zoom = zoom_factor;
+  camera.target = (Vector2){player.x + player.width / 2.0f,
+                            player.y + player.height / 2.0f};
+  camera.offset = (Vector2){SCREEN_W / 2.0f, SCREEN_H / 2.0f};
+  camera.zoom = 1.0f;
   camera.rotation = 0.0f;
 
   while (!WindowShouldClose()) {
@@ -89,6 +88,10 @@ int main(void) {
       }
     }
 
+    /* --- Update camera to follow player -------------------------------- */
+    camera.target = (Vector2){player.x + player.width / 2.0f,
+                              player.y + player.height / 2.0f};
+
     /* --- Dots --------------------------------------------------------- */
     UpdateDots(dots, &player);
     score += CheckDotCollision(dots, &player);
@@ -96,6 +99,8 @@ int main(void) {
     /* --- Rendering ---------------------------------------------------- */
     BeginDrawing();
     ClearBackground(RAYWHITE);
+
+    BeginMode2D(camera);
 
     float angle = atan2f(last_dir.y, last_dir.x) * (180.0f / PI) - 90.0f;
     DrawLevel();
@@ -105,7 +110,17 @@ int main(void) {
                                pug.height},
                    (Vector2){pug.width / 2, pug.height / 2}, angle, WHITE);
     DrawDots(dots);
+
+    EndMode2D();
+
     DrawText(TextFormat("Klopsiki zjedzone: %d", score), 2, 2, 24, RED);
+    DrawText(TextFormat("Player: (%.1f, %.1f)", player.x, player.y), 2, 30, 20,
+             BLUE);
+    DrawText(TextFormat("Camera Target: (%.1f, %.1f)", camera.target.x,
+                        camera.target.y),
+             2, 55, 20, GREEN);
+    DrawText(TextFormat("Screen Center: (%d, %d)", SCREEN_W / 2, SCREEN_H / 2),
+             2, 80, 20, RED);
 
     EndDrawing();
   }
