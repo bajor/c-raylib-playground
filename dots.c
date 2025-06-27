@@ -106,6 +106,10 @@ void SpawnDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
 }
 
 void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
+  // Distance threshold for enemy behavior: freeze when far, run when close
+  const float FREEZE_DISTANCE =
+      400.0f; // Enemies freeze when player is this far or farther
+
   for (int i = 0; i < MAX_DOTS; ++i) {
     if (!dots[i].alive)
       continue;
@@ -115,9 +119,18 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
     dots[i].stuck_frames = (moved < 1.0f) ? dots[i].stuck_frames + 1 : 0;
     dots[i].last_pos = (Vector2){dots[i].rect.x, dots[i].rect.y};
 
+    // Calculate distance to player
+    float player_dist = dist(dots[i].rect.x + dots[i].rect.width / 2.0f,
+                             dots[i].rect.y + dots[i].rect.height / 2.0f,
+                             player->x + player->width / 2.0f,
+                             player->y + player->height / 2.0f);
+
+    // If player is too far, freeze the enemy
+    if (player_dist > FREEZE_DISTANCE) {
+      continue; // Skip movement for this enemy
+    }
+
     float random_chance = (dots[i].stuck_frames > 20) ? 0.5f : 0.1f;
-    float player_dist =
-        dist(dots[i].rect.x, dots[i].rect.y, player->x, player->y);
     bool force_random = (dots[i].stuck_frames > 20 && player_dist < 200.0f);
     bool do_random = force_random || ((float)rand() / RAND_MAX < random_chance);
 
@@ -143,7 +156,10 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
 
         valid[valid_n++] = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
 
-        float d_player = dist(test.x, test.y, player->x, player->y);
+        float d_player =
+            dist(test.x + test.width / 2.0f, test.y + test.height / 2.0f,
+                 player->x + player->width / 2.0f,
+                 player->y + player->height / 2.0f);
         int future_open = SimulateOpenArea(
             test.x + test.width / 2.0f, test.y + test.height / 2.0f, 2, 20.0f);
         float repulse = 0.0f;
@@ -154,7 +170,18 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
               repulse += (60.0f - d);
           }
         }
-        float score = future_open + d_player * 0.1f - repulse * 0.5f;
+
+        // Modified scoring: prioritize running away from player when close
+        float score = future_open - repulse * 0.5f;
+
+        // When player is close, heavily prioritize moving away from player
+        if (player_dist < FREEZE_DISTANCE) {
+          score +=
+              d_player * 2.0f; // Strong preference for distance from player
+        } else {
+          score += d_player * 0.1f; // Original behavior for medium distance
+        }
+
         if (score > best_score) {
           best_score = score;
           best_move = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
@@ -174,7 +201,10 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
           test.y += dy * DOT_SPEED;
           if (CollidesWithLevel(test))
             continue;
-          float d_player = dist(test.x, test.y, player->x, player->y);
+          float d_player =
+              dist(test.x + test.width / 2.0f, test.y + test.height / 2.0f,
+                   player->x + player->width / 2.0f,
+                   player->y + player->height / 2.0f);
           int future_open =
               SimulateOpenArea(test.x + test.width / 2.0f,
                                test.y + test.height / 2.0f, 2, 20.0f);
@@ -186,7 +216,15 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
                 repulse += (60.0f - d);
             }
           }
-          float score = future_open + d_player * 0.1f - repulse * 0.5f;
+
+          // Same modified scoring for fallback movement
+          float score = future_open - repulse * 0.5f;
+          if (player_dist < FREEZE_DISTANCE) {
+            score += d_player * 2.0f;
+          } else {
+            score += d_player * 0.1f;
+          }
+
           if (score > best_score) {
             best_score = score;
             best_move = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
