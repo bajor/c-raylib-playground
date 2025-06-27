@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/m/repos/c/c-raylib-playground/build",
+  "command": "/usr/bin/cc  -isystem /opt/homebrew/Cellar/raylib/5.5/include -std=gnu99 -arch arm64 -I/opt/homebrew/Cellar/raylib/5.5/include -o CMakeFiles/main.dir/main.c.o -c /Users/m/repos/c/c-raylib-playground/main.c",
+  "file": "/Users/m/repos/c/c-raylib-playground/main.c",
+  "output": "CMakeFiles/main.dir/main.c.o"
+}
+]

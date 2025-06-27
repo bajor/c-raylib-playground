@@ -1,0 +1,18 @@
+  {
+    "configurations": [
+      {
+        "name": "macos-arm64",
+        "includePath": [
+          "${workspaceFolder}",
+          "/opt/homebrew/opt/raylib/include"
+        ],
+        "defines": [],
+        "compilerPath": "/opt/homebrew/bin/clang",
+        "cStandard": "c99",
+        "cppStandard": "c++17",
+        "intelliSenseMode": "macos-clang-arm64"
+      }
+    ],
+    "version": 4
+  }
+ 

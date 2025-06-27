@@ -9,8 +9,13 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 source ~/.zprofile
 ```
 
-## Raylib for vscode
-https://github.com/raysan5/raylib/wiki/Using-raylib-in-VSCode
+## Setup for vscode so language server don't complain
+```
+brew install cmake
+mkdir build
+cd build
+cmake ..
+```
 
 ## Compile and run
 ```
