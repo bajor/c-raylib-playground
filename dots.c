@@ -79,6 +79,15 @@ static int SimulateOpenArea(float x, float y, int depth, float radius) {
 }
 
 void SpawnDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
+  // Load meatball texture once
+  static Texture2D meatball_texture = {0};
+  static bool texture_loaded = false;
+
+  if (!texture_loaded) {
+    meatball_texture = LoadTexture("meatball.png");
+    texture_loaded = true;
+  }
+
   int spawned = 0;
   while (spawned < MAX_DOTS) {
     int gx = rand() % LEVEL_W;
@@ -93,14 +102,15 @@ void SpawnDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
     if (dist(px, py, cx, cy) < TILE_SIZE * 4)
       continue; /* keep distance */
 
-    dots[spawned] = (RedDot){.rect = {gx * TILE_SIZE + TILE_SIZE / 4.0f,
-                                      gy * TILE_SIZE + TILE_SIZE / 4.0f,
-                                      TILE_SIZE / 2.0f, TILE_SIZE / 2.0f},
+    dots[spawned] = (RedDot){.rect = {gx * TILE_SIZE + (TILE_SIZE - 24) / 2.0f,
+                                      gy * TILE_SIZE + (TILE_SIZE - 24) / 2.0f,
+                                      24.0f, 24.0f},
                              .alive = 1,
                              .last_pos = {cx, cy},
                              .stuck_frames = 0,
                              .corner_frames = 0,
-                             .last_dir = {0, 0}};
+                             .last_dir = {0, 0},
+                             .texture = meatball_texture};
     ++spawned;
   }
 }
@@ -243,9 +253,8 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
 void DrawDots(const RedDot dots[MAX_DOTS]) {
   for (int i = 0; i < MAX_DOTS; ++i)
     if (dots[i].alive)
-      DrawCircle((int)(dots[i].rect.x + dots[i].rect.width / 2.0f),
-                 (int)(dots[i].rect.y + dots[i].rect.height / 2.0f),
-                 dots[i].rect.width / 2.0f, (Color){139, 69, 19, 255});
+      DrawTexture(dots[i].texture, (int)(dots[i].rect.x), (int)(dots[i].rect.y),
+                  WHITE);
 }
 
 int CheckDotCollision(RedDot dots[MAX_DOTS], const Rectangle *player) {

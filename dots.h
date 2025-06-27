@@ -11,6 +11,7 @@ typedef struct {
   int stuck_frames;
   int corner_frames;
   Vector2 last_dir;
+  Texture2D texture;
 } RedDot;
 
 void SpawnDots(RedDot dots[MAX_DOTS], const Rectangle *player);
