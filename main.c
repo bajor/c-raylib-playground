@@ -67,7 +67,39 @@ int main(void) {
                 }
             }
         }
-        if (!collided) player = nextPos;
+        if (!collided) {
+            player = nextPos;
+        } else {
+            // Try X only
+            nextPos = player;
+            nextPos.x += velocity.x;
+            collided = false;
+            for (int y = 0; y < LEVEL_H; y++) {
+                for (int x = 0; x < LEVEL_W; x++) {
+                    if (levelData[y*LEVEL_W + x].r == 0 && levelData[y*LEVEL_W + x].g == 0 && levelData[y*LEVEL_W + x].b == 0) {
+                        Rectangle wall = {x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE};
+                        if (CheckCollisionRecs(nextPos, wall)) collided = true;
+                    }
+                }
+            }
+            if (!collided) {
+                player = nextPos;
+            } else {
+                // Try Y only
+                nextPos = player;
+                nextPos.y += velocity.y;
+                collided = false;
+                for (int y = 0; y < LEVEL_H; y++) {
+                    for (int x = 0; x < LEVEL_W; x++) {
+                        if (levelData[y*LEVEL_W + x].r == 0 && levelData[y*LEVEL_W + x].g == 0 && levelData[y*LEVEL_W + x].b == 0) {
+                            Rectangle wall = {x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE};
+                            if (CheckCollisionRecs(nextPos, wall)) collided = true;
+                        }
+                    }
+                }
+                if (!collided) player = nextPos;
+            }
+        }
 
         // Draw
         BeginDrawing();
