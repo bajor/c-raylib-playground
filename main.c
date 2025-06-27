@@ -13,6 +13,7 @@
 #define LEVEL_H 18
 #define PLAYER_SIZE 18
 #define PLAYER_SPEED 3
+#define DOT_SPEED 3.6f
 #define MAX_DOTS 10
 
 // Generate a simple PNG level if not present
@@ -150,8 +151,8 @@ int main(void) {
                 for (int dy = -1; dy <= 1; dy++) {
                     if (dx == 0 && dy == 0) continue;
                     Rectangle test = dots[i].rect;
-                    test.x += dx * PLAYER_SPEED;
-                    test.y += dy * PLAYER_SPEED;
+                    test.x += dx * DOT_SPEED;
+                    test.y += dy * DOT_SPEED;
                     // Check collision with walls
                     int blocked = 0;
                     for (int y = 0; y < LEVEL_H && !blocked; y++) {
@@ -164,7 +165,7 @@ int main(void) {
                     }
                     if (blocked) continue;
                     // Store valid moves for possible random selection
-                    valid_moves[valid_count++] = (Vector2){dx * PLAYER_SPEED, dy * PLAYER_SPEED};
+                    valid_moves[valid_count++] = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
                     // Score: maximize distance from player, minimize proximity to other dots
                     float dist_player = sqrtf((test.x-player.x)*(test.x-player.x) + (test.y-player.y)*(test.y-player.y));
                     float min_dist_dot = 1e9f;
@@ -176,7 +177,7 @@ int main(void) {
                     float score = dist_player + 0.7f * min_dist_dot; // weight for spreading
                     if (score > best_score) {
                         best_score = score;
-                        best_move = (Vector2){dx * PLAYER_SPEED, dy * PLAYER_SPEED};
+                        best_move = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
                     }
                 }
             }
