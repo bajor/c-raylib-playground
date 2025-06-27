@@ -7,8 +7,8 @@ all: run
 run: clean game
 	./game
 
-game: main.c
-	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
+game: main.c level.c dots.c
+	$(CC) main.c level.c dots.c -o game $(CFLAGS) $(LDFLAGS)
 
 clean:
 	rm -f game
