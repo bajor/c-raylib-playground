@@ -1,8 +1,8 @@
 #include "raylib.h"
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define SCREEN_W 800
 #define SCREEN_H 450
@@ -14,30 +14,8 @@
 #define DOT_SPEED 3.6f
 #define MAX_DOTS 10
 
-// Generate a simple PNG level if not present
-void GenerateLevelPNG(const char *filename) {
-  Image img = GenImageColor(LEVEL_W, LEVEL_H, WHITE);
-  Color *pixels = LoadImageColors(img);
-  // Draw border walls
-  for (int y = 0; y < LEVEL_H; y++) {
-    for (int x = 0; x < LEVEL_W; x++) {
-      if (x == 0 || y == 0 || x == LEVEL_W - 1 || y == LEVEL_H - 1) {
-        pixels[y * LEVEL_W + x] = BLACK;
-      }
-    }
-  }
-  // Add some inner walls
-  for (int x = 4; x < 28; x++)
-    pixels[7 * LEVEL_W + x] = BLACK;
-  for (int y = 10; y < 15; y++)
-    pixels[y * LEVEL_W + 10] = BLACK;
-  for (int x = 15; x < 25; x++)
-    pixels[13 * LEVEL_W + x] = BLACK;
-  memcpy(img.data, pixels, LEVEL_W * LEVEL_H * sizeof(Color));
-  ExportImage(img, filename);
-  UnloadImage(img);
-  UnloadImageColors(pixels);
-}
+// --- Add this struct for level data ---
+Color levelData[LEVEL_W * LEVEL_H];
 
 // Red dot struct
 typedef struct {
@@ -48,10 +26,6 @@ typedef struct {
 } RedDot;
 
 int main(void) {
-  if (!FileExists("level.png"))
-    GenerateLevelPNG("level.png");
-  Image levelImg = LoadImage("level.png");
-  Color *levelData = LoadImageColors(levelImg);
   InitWindow(SCREEN_W, SCREEN_H, "Top-down Platformer – raylib");
   SetTargetFPS(60);
 
@@ -68,7 +42,7 @@ int main(void) {
     int ay = rand() % LEVEL_H;
     float dist = sqrtf((ax - player.x) * (ax - player.x) +
                        (ay - player.y) * (ay - player.y));
-    if (levelData[ay * LEVEL_W + ax].r == 255 && dist > LEVEL_W / 8) {
+    if (dist > LEVEL_W / 8) {
       dots[dots_spawned].rect = (Rectangle){ax * TILE_SIZE + TILE_SIZE / 4,
                                             ay * TILE_SIZE + TILE_SIZE / 4,
                                             TILE_SIZE / 2, TILE_SIZE / 2};
@@ -80,6 +54,21 @@ int main(void) {
     }
   }
   int score = 0;
+
+  // --- Load level data from image ---
+  Image levelImg = LoadImage("level.png");
+  if (levelImg.width != LEVEL_W || levelImg.height != LEVEL_H) {
+    printf("level.png must be %dx%d pixels!\n", LEVEL_W, LEVEL_H);
+    UnloadImage(levelImg);
+    CloseWindow();
+    return 1;
+  }
+  Color *pixels = LoadImageColors(levelImg);
+  for (int i = 0; i < LEVEL_W * LEVEL_H; i++) {
+    levelData[i] = pixels[i];
+  }
+  UnloadImageColors(pixels);
+  UnloadImage(levelImg);
 
   while (!WindowShouldClose()) {
     // Input
@@ -170,7 +159,13 @@ int main(void) {
       float random_chance = 0.1f;
       if (dots[i].stuck_frames > 10)
         random_chance = 0.5f;
-      int do_random = ((float)rand() / (float)RAND_MAX) < random_chance;
+      // If stuck and player is close, always force random move
+      float dist_to_player =
+          sqrtf((dots[i].rect.x - player.x) * (dots[i].rect.x - player.x) +
+                (dots[i].rect.y - player.y) * (dots[i].rect.y - player.y));
+      int force_random = (dots[i].stuck_frames > 10 && dist_to_player < 200);
+      int do_random =
+          force_random || (((float)rand() / (float)RAND_MAX) < random_chance);
       float best_score = -1e9f;
       Vector2 best_move = {0, 0};
       Vector2 valid_moves[8];
@@ -272,8 +267,6 @@ int main(void) {
     DrawText(TextFormat("Klopsiki zjedzone: %d", score), 2, 2, 24, RED);
     EndDrawing();
   }
-  UnloadImageColors(levelData);
-  UnloadImage(levelImg);
   UnloadTexture(pug);
   CloseWindow();
   return 0;
