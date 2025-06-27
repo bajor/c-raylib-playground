@@ -225,8 +225,8 @@ int main(void) {
                 DrawCircle((int)(dots[i].rect.x + dots[i].rect.width/2), (int)(dots[i].rect.y + dots[i].rect.height/2), dots[i].rect.width/2, RED);
             }
         }
-        // Draw score
-        DrawText(TextFormat("Score: %d", score), player.x - SCREEN_W/2 + 10, player.y - SCREEN_H/2 + 10, 24, RED);
+        EndMode2D();
+        DrawText(TextFormat("Score: %d", score), 2, 2, 24, RED);
         EndDrawing();
     }
     UnloadImageColors(levelData);
