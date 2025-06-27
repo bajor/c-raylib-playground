@@ -1,74 +1,89 @@
 #include "raylib.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define SCREEN_W 800
 #define SCREEN_H 450
-#define BALL_R 8
+#define TILE_SIZE 25
+#define LEVEL_W 32
+#define LEVEL_H 18
+#define PLAYER_SIZE 18
+#define PLAYER_SPEED 3
 
-typedef struct {
-  Rectangle r;
-  int speed;
-} Paddle;
+// Generate a simple PNG level if not present
+void GenerateLevelPNG(const char *filename) {
+    Image img = GenImageColor(LEVEL_W, LEVEL_H, WHITE);
+    Color *pixels = LoadImageColors(img);
+    // Draw border walls
+    for (int y = 0; y < LEVEL_H; y++) {
+        for (int x = 0; x < LEVEL_W; x++) {
+            if (x == 0 || y == 0 || x == LEVEL_W-1 || y == LEVEL_H-1) {
+                pixels[y*LEVEL_W + x] = BLACK;
+            }
+        }
+    }
+    // Add some inner walls
+    for (int x = 4; x < 28; x++) pixels[7*LEVEL_W + x] = BLACK;
+    for (int y = 10; y < 15; y++) pixels[y*LEVEL_W + 10] = BLACK;
+    for (int x = 15; x < 25; x++) pixels[13*LEVEL_W + x] = BLACK;
+    memcpy(img.data, pixels, LEVEL_W * LEVEL_H * sizeof(Color));
+    ExportImage(img, filename);
+    UnloadImage(img);
+    UnloadImageColors(pixels);
+}
 
 int main(void) {
-  InitWindow(SCREEN_W, SCREEN_H, "Pong – raylib");
-  SetTargetFPS(60);
+    if (!FileExists("level.png")) GenerateLevelPNG("level.png");
+    Image levelImg = LoadImage("level.png");
+    Color *levelData = LoadImageColors(levelImg);
+    InitWindow(SCREEN_W, SCREEN_H, "Top-down Platformer – raylib");
+    SetTargetFPS(60);
 
-  Paddle left = {(Rectangle){20, SCREEN_H / 2 - 60, 10, 120}, 6};
-  Paddle right = {(Rectangle){SCREEN_W - 30, SCREEN_H / 2 - 60, 10, 120}, 6};
+    Rectangle player = {TILE_SIZE + 4, TILE_SIZE + 4, PLAYER_SIZE, PLAYER_SIZE};
+    Vector2 velocity = {0, 0};
 
-  Vector2 ballPos = {SCREEN_W / 2.0f, SCREEN_H / 2.0f};
-  Vector2 ballVel = {4, 4};
+    while (!WindowShouldClose()) {
+        // Input
+        velocity = (Vector2){0, 0};
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) velocity.y = -PLAYER_SPEED;
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) velocity.y = PLAYER_SPEED;
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) velocity.x = -PLAYER_SPEED;
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) velocity.x = PLAYER_SPEED;
 
-  int scoreL = 0, scoreR = 0;
+        // Try to move player, check collision with walls
+        Rectangle nextPos = player;
+        nextPos.x += velocity.x;
+        nextPos.y += velocity.y;
+        bool collided = false;
+        for (int y = 0; y < LEVEL_H; y++) {
+            for (int x = 0; x < LEVEL_W; x++) {
+                if (levelData[y*LEVEL_W + x].r == 0 && levelData[y*LEVEL_W + x].g == 0 && levelData[y*LEVEL_W + x].b == 0) {
+                    Rectangle wall = {x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE};
+                    if (CheckCollisionRecs(nextPos, wall)) collided = true;
+                }
+            }
+        }
+        if (!collided) player = nextPos;
 
-  while (!WindowShouldClose()) {
-    /* ---- input ---- */
-    if (IsKeyDown(KEY_W) && left.r.y > 0)
-      left.r.y -= left.speed;
-    if (IsKeyDown(KEY_S) && left.r.y + left.r.height < SCREEN_H)
-      left.r.y += left.speed;
-    if (IsKeyDown(KEY_UP) && right.r.y > 0)
-      right.r.y -= right.speed;
-    if (IsKeyDown(KEY_DOWN) && right.r.y + right.r.height < SCREEN_H)
-      right.r.y += right.speed;
-
-    /* ---- physics ---- */
-    ballPos.x += ballVel.x;
-    ballPos.y += ballVel.y;
-
-    if (ballPos.y <= BALL_R || ballPos.y >= SCREEN_H - BALL_R)
-      ballVel.y *= -1;
-
-    if (CheckCollisionCircleRec(ballPos, BALL_R, left.r) && ballVel.x < 0)
-      ballVel.x *= -1.05f;
-    if (CheckCollisionCircleRec(ballPos, BALL_R, right.r) && ballVel.x > 0)
-      ballVel.x *= -1.05f;
-
-    if (ballPos.x < 0) {
-      scoreR++;
-      ballPos = (Vector2){SCREEN_W / 2, SCREEN_H / 2};
-      ballVel = (Vector2){4, 4};
+        // Draw
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        // Draw level
+        for (int y = 0; y < LEVEL_H; y++) {
+            for (int x = 0; x < LEVEL_W; x++) {
+                if (levelData[y*LEVEL_W + x].r == 0 && levelData[y*LEVEL_W + x].g == 0 && levelData[y*LEVEL_W + x].b == 0) {
+                    DrawRectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE, DARKGRAY);
+                }
+            }
+        }
+        // Draw player
+        DrawRectangleRec(player, BLUE);
+        EndDrawing();
     }
-    if (ballPos.x > SCREEN_W) {
-      scoreL++;
-      ballPos = (Vector2){SCREEN_W / 2, SCREEN_H / 2};
-      ballVel = (Vector2){-4, -4};
-    }
-
-    /* ---- draw ---- */
-    BeginDrawing();
-    ClearBackground(BLACK);
-
-    DrawRectangleRec(left.r, WHITE);
-    DrawRectangleRec(right.r, WHITE);
-    DrawCircleV(ballPos, BALL_R, RAYWHITE);
-    DrawLine(SCREEN_W / 2, 0, SCREEN_W / 2, SCREEN_H, GRAY);
-
-    DrawText(TextFormat("%d", scoreL), SCREEN_W / 4 - 10, 20, 40, GRAY);
-    DrawText(TextFormat("%d", scoreR), 3 * SCREEN_W / 4 - 10, 20, 40, GRAY);
-
-    EndDrawing();
-  }
-  CloseWindow();
-  return 0;
+    UnloadImageColors(levelData);
+    UnloadImage(levelImg);
+    CloseWindow();
+    return 0;
 }
