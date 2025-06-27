@@ -41,6 +41,8 @@ void GenerateLevelPNG(const char *filename) {
 typedef struct {
     Rectangle rect;
     int alive;
+    Vector2 last_pos;
+    int stuck_frames;
 } RedDot;
 
 int main(void) {
@@ -65,6 +67,8 @@ int main(void) {
         if (levelData[ay*LEVEL_W + ax].r == 255 && dist > LEVEL_W/8) {
             dots[dots_spawned].rect = (Rectangle){ax*TILE_SIZE+TILE_SIZE/4, ay*TILE_SIZE+TILE_SIZE/4, TILE_SIZE/2, TILE_SIZE/2};
             dots[dots_spawned].alive = 1;
+            dots[dots_spawned].last_pos = (Vector2){dots[dots_spawned].rect.x, dots[dots_spawned].rect.y};
+            dots[dots_spawned].stuck_frames = 0;
             dots_spawned++;
         }
     }
@@ -128,8 +132,19 @@ int main(void) {
         // --- Red dot AI movement ---
         for (int i = 0; i < MAX_DOTS; i++) {
             if (!dots[i].alive) continue;
+            // Check if stuck (not moved much for several frames)
+            float moved = sqrtf((dots[i].rect.x - dots[i].last_pos.x)*(dots[i].rect.x - dots[i].last_pos.x) + (dots[i].rect.y - dots[i].last_pos.y)*(dots[i].rect.y - dots[i].last_pos.y));
+            if (moved < 1.0f) dots[i].stuck_frames++;
+            else dots[i].stuck_frames = 0;
+            dots[i].last_pos = (Vector2){dots[i].rect.x, dots[i].rect.y};
+            // Chance for random move: base 10%, or 50% if stuck for 10+ frames
+            float random_chance = 0.1f;
+            if (dots[i].stuck_frames > 10) random_chance = 0.5f;
+            int do_random = ((float)rand()/(float)RAND_MAX) < random_chance;
             float best_score = -1e9f;
             Vector2 best_move = {0, 0};
+            Vector2 valid_moves[8];
+            int valid_count = 0;
             // Try 8 directions (N, NE, E, SE, S, SW, W, NW)
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -148,6 +163,8 @@ int main(void) {
                         }
                     }
                     if (blocked) continue;
+                    // Store valid moves for possible random selection
+                    valid_moves[valid_count++] = (Vector2){dx * PLAYER_SPEED, dy * PLAYER_SPEED};
                     // Score: maximize distance from player, minimize proximity to other dots
                     float dist_player = sqrtf((test.x-player.x)*(test.x-player.x) + (test.y-player.y)*(test.y-player.y));
                     float min_dist_dot = 1e9f;
@@ -162,6 +179,11 @@ int main(void) {
                         best_move = (Vector2){dx * PLAYER_SPEED, dy * PLAYER_SPEED};
                     }
                 }
+            }
+            // Pick random valid move if needed
+            if (do_random && valid_count > 0) {
+                int idx = rand() % valid_count;
+                best_move = valid_moves[idx];
             }
             // Move in the best direction
             dots[i].rect.x += best_move.x;
