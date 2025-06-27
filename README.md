@@ -1,3 +1,6 @@
+## AI generated "game" done in 3-4h with raylib using cursor
+![Demo](./output.gif)
+
 ## Set things up
 
 ```
