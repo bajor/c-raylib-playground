@@ -114,13 +114,6 @@ int main(void) {
     EndMode2D();
 
     DrawText(TextFormat("Klopsiki zjedzone: %d", score), 2, 2, 24, RED);
-    DrawText(TextFormat("Player: (%.1f, %.1f)", player.x, player.y), 2, 30, 20,
-             BLUE);
-    DrawText(TextFormat("Camera Target: (%.1f, %.1f)", camera.target.x,
-                        camera.target.y),
-             2, 55, 20, GREEN);
-    DrawText(TextFormat("Screen Center: (%d, %d)", SCREEN_W / 2, SCREEN_H / 2),
-             2, 80, 20, RED);
 
     EndDrawing();
   }

@@ -11,6 +11,6 @@
 #define PLAYER_SIZE 18
 #define PLAYER_SPEED 3
 #define DOT_SPEED 3.6f
-#define MAX_DOTS 10
+#define MAX_DOTS 50
 
 #endif /* CONFIG_H */
