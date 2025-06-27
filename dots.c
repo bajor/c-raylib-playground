@@ -115,16 +115,18 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
     dots[i].stuck_frames = (moved < 1.0f) ? dots[i].stuck_frames + 1 : 0;
     dots[i].last_pos = (Vector2){dots[i].rect.x, dots[i].rect.y};
 
-    float random_chance = (dots[i].stuck_frames > 10) ? 0.5f : 0.1f;
+    float random_chance = (dots[i].stuck_frames > 20) ? 0.5f : 0.1f;
     float player_dist =
         dist(dots[i].rect.x, dots[i].rect.y, player->x, player->y);
-    bool force_random = (dots[i].stuck_frames > 10 && player_dist < 200.0f);
+    bool force_random = (dots[i].stuck_frames > 20 && player_dist < 200.0f);
     bool do_random = force_random || ((float)rand() / RAND_MAX < random_chance);
 
     float best_score = -1e9f;
     Vector2 best_move = {0, 0};
     Vector2 valid[8];
     int valid_n = 0;
+
+    int stuck_threshold = 20;
 
     for (int dx = -1; dx <= 1; ++dx)
       for (int dy = -1; dy <= 1; ++dy) {
@@ -144,7 +146,15 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
         float d_player = dist(test.x, test.y, player->x, player->y);
         int future_open = SimulateOpenArea(
             test.x + test.width / 2.0f, test.y + test.height / 2.0f, 2, 20.0f);
-        float score = future_open + d_player * 0.1f;
+        float repulse = 0.0f;
+        for (int j = 0; j < MAX_DOTS; ++j) {
+          if (i != j && dots[j].alive) {
+            float d = dist(test.x, test.y, dots[j].rect.x, dots[j].rect.y);
+            if (d < 60.0f)
+              repulse += (60.0f - d);
+          }
+        }
+        float score = future_open + d_player * 0.1f - repulse * 0.5f;
         if (score > best_score) {
           best_score = score;
           best_move = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
@@ -168,7 +178,15 @@ void UpdateDots(RedDot dots[MAX_DOTS], const Rectangle *player) {
           int future_open =
               SimulateOpenArea(test.x + test.width / 2.0f,
                                test.y + test.height / 2.0f, 2, 20.0f);
-          float score = future_open + d_player * 0.1f;
+          float repulse = 0.0f;
+          for (int j = 0; j < MAX_DOTS; ++j) {
+            if (i != j && dots[j].alive) {
+              float d = dist(test.x, test.y, dots[j].rect.x, dots[j].rect.y);
+              if (d < 60.0f)
+                repulse += (60.0f - d);
+            }
+          }
+          float score = future_open + d_player * 0.1f - repulse * 0.5f;
           if (score > best_score) {
             best_score = score;
             best_move = (Vector2){dx * DOT_SPEED, dy * DOT_SPEED};
