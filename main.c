@@ -10,7 +10,7 @@ int main(void) {
 
   Texture2D pug = LoadTexture("pug.png");
 
-  if (!LoadLevel("level.png")) {
+  if (!LoadLevel("generated_maze.png")) {
     CloseWindow();
     return 1;
   }
@@ -23,6 +23,37 @@ int main(void) {
   SpawnDots(dots, &player);
 
   int score = 0;
+
+  // Find a non-wall tile nearest the center for player start
+  int center_x = LEVEL_W / 2;
+  int center_y = LEVEL_H / 2;
+  int best_dist = LEVEL_W * LEVEL_W + LEVEL_H * LEVEL_H;
+  int best_x = center_x, best_y = center_y;
+  for (int y = 0; y < LEVEL_H; ++y) {
+    for (int x = 0; x < LEVEL_W; ++x) {
+      if (!IsWall(levelData[y * LEVEL_W + x])) {
+        int dx = x - center_x;
+        int dy = y - center_y;
+        int dist = dx * dx + dy * dy;
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_x = x;
+          best_y = y;
+        }
+      }
+    }
+  }
+  player.x = best_x * TILE_SIZE + (TILE_SIZE - player.width) / 2.0f;
+  player.y = best_y * TILE_SIZE + (TILE_SIZE - player.height) / 2.0f;
+
+  // Camera setup
+  Camera2D camera = {0};
+  // Scale down the board: fit about 1/10 of the board width in the window
+  float zoom_factor = (float)SCREEN_W / (LEVEL_W * TILE_SIZE) * 10.0f;
+  if (zoom_factor > 1.0f)
+    zoom_factor = 1.0f;
+  camera.zoom = zoom_factor;
+  camera.rotation = 0.0f;
 
   while (!WindowShouldClose()) {
     /* --- Input -------------------------------------------------------- */
