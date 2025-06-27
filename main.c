@@ -41,6 +41,8 @@ int main(void) {
     InitWindow(SCREEN_W, SCREEN_H, "Top-down Platformer – raylib");
     SetTargetFPS(60);
 
+    Texture2D pug = LoadTexture("pug.png");
+
     Rectangle player = {TILE_SIZE + 4, TILE_SIZE + 4, PLAYER_SIZE, PLAYER_SIZE};
     Vector2 velocity = {0, 0};
 
@@ -79,11 +81,19 @@ int main(void) {
             }
         }
         // Draw player
-        DrawRectangleRec(player, BLUE);
+        DrawTexturePro(
+            pug,
+            (Rectangle){0, 0, pug.width, pug.height},
+            (Rectangle){player.x + player.width/2 - pug.width/2, player.y + player.height/2 - pug.height/2, pug.width, pug.height},
+            (Vector2){0, 0},
+            0.0f,
+            WHITE
+        );
         EndDrawing();
     }
     UnloadImageColors(levelData);
     UnloadImage(levelImg);
+    UnloadTexture(pug);
     CloseWindow();
     return 0;
 }
